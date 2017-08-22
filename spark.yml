@@ -1,0 +1,105 @@
+# Setup
+- name: Create ssh keypair
+  hosts: localhost
+  gather_facts: False
+  vars:
+    key_name: paul-cloud-ansible-test
+  tasks:
+    - name: Create new keypair
+      os_keypair:
+        state: present
+        name: "{{ key_name }}"
+        public_key_file: "{{ '~' | expanduser }}/.ssh/id_rsa.cloud.pub"
+
+# Launch HDFS
+- name: Create datanodes
+  hosts: localhost
+  gather_facts: False
+  vars:
+    key_name: paul-cloud-ansible-test
+    flavor: m1.small
+    security_groups: 2d226beb-13f7-4fed-b188-4520c5fde9ee
+    image: ubuntu_17.04_server_cloudimg_amd64
+    dev_net_id: 8561af04-237f-414d-96d4-67ef75a6e448
+    datanode_count: 3
+  tasks:
+    - name: Launch instance
+      os_server:
+         state: present
+         name: data-{{ item }}
+         image: "{{ image }}"
+         flavor: "{{ flavor }}"
+         security_groups: "{{ security_groups }}"
+         key_name: "{{ key_name }}"
+         nics:
+           - net-id: "{{ dev_net_id }}"
+         wait: true
+      register: nodes
+      with_sequence:
+        count={{ datanode_count }}
+    - name: Show Server's IP
+      debug: var=nodes.openstack.public_v4
+    - name: Add new instance to host group
+      add_host: hostname={{ item.server.public_v4 }}
+                groupname=datanodes
+                ansible_user=ubuntu
+                instance_name={{ item.server.name }}
+      with_items: "{{ nodes.results }}"
+    - name: Wait for SSH to come up
+      wait_for: host={{ item.server.public_v4 }} port=22 delay=60 timeout=3200 state=started
+      with_items: "{{ nodes.results }}"
+
+- name: Configure instances
+  hosts: datanodes
+  become: False
+  gather_facts: False
+  roles:
+    - foundation
+    - hadoop
+    - hdfs_datanode
+
+- name: Create namenodes
+  hosts: localhost
+  gather_facts: False
+  vars:
+    key_name: paul-cloud-ansible-test
+    flavor: m1.small
+    security_groups: 2d226beb-13f7-4fed-b188-4520c5fde9ee
+    image: ubuntu_17.04_server_cloudimg_amd64
+    dev_net_id: 8561af04-237f-414d-96d4-67ef75a6e448
+    namenode_count: 1
+  tasks:
+    - name: Launch instance
+      os_server:
+         state: present
+         name: name-{{ item }}
+         image: "{{ image }}"
+         flavor: "{{ flavor }}"
+         security_groups: "{{ security_groups }}"
+         key_name: "{{ key_name }}"
+         nics:
+           - net-id: "{{ dev_net_id }}"
+         wait: true
+      register: nodes
+      with_sequence:
+        count={{ namenode_count }}
+    - name: Show Server's IP
+      debug: var=nodes.openstack.public_v4
+    - name: Add new instance to host group
+      add_host: hostname={{ item.server.public_v4 }}
+                groupname=namenodes
+                ansible_user=ubuntu
+                instance_name={{ item.server.name }}
+      with_items: "{{ nodes.results }}"
+    - name: Wait for SSH to come up
+      wait_for: host={{ item.server.public_v4 }} port=22 delay=60 timeout=3200 state=started
+      with_items: "{{ nodes.results }}"
+
+- name: Configure namenodes
+  hosts: namenodes
+  become: False
+  gather_facts: False
+  roles:
+    - foundation
+    - hadoop
+    - hdfs_namenode

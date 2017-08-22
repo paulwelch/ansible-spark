@@ -1,0 +1,3 @@
+---
+- name: Start Hadoop
+  raw: sudo service hadoop-hdfs-datanode start

@@ -1,0 +1,16 @@
+---
+- name: Add nodes
+  become: true
+  lineinfile:
+    path: /usr/lib/hadoop/etc/hadoop/slaves
+    line: "{{ item }}"
+  with_items:
+    - 'data-1'
+    - 'data-2'
+    - 'data-3'
+
+- name: Format HDFS
+  raw: sudo -u hdfs hadoop namenode -format
+
+- name: Start Hadoop
+  raw: sudo service hadoop-hdfs-namenode start

@@ -1,0 +1,19 @@
+---
+- name: Hadoop Repo Key
+  raw: wget -O- http://www.apache.org/dist/bigtop/stable/repos/GPG-KEY-bigtop | sudo apt-key add -
+
+- name: Hadoop Repo List
+  raw: sudo wget -O /etc/apt/sources.list.d/bigtop.list http://www.apache.org/dist/bigtop/stable/repos/ubuntu16.04/bigtop.list
+
+- name: Cleanup to avoid apt cache update error
+  raw: sudo rm -rf /var/lib/apt/lists/*
+
+- name: apt-get update because it doesn't always work with ansible task
+  raw: sudo apt-get clean && sudo apt-get update
+
+- name: Apt Packages - Apache Bigtop
+  become: true
+  apt:
+    name: hadoop*
+    allow_unauthenticated: yes
+    state: present
