@@ -1,3 +1,26 @@
 ---
 - name: Start Hadoop
   raw: sudo service hadoop-hdfs-datanode start
+
+#TODO: This should work after bug fix: https://github.com/ansible/ansible/issues/26793
+#- name: Config - yarn-site.xml
+#  become: true
+#  blockinfile:
+#    path: /etc/hadoop/conf/yarn-site.xml
+#    marker: "<!-- {mark} ANSIBLE MANAGED CONFIG -->"
+#    insertafter: "<configuration>"
+#    content: |
+#      <property>
+#        <name>yarn.resourcemanager.hostname</name>
+#        <value>name-1</value>
+#      </property>
+- name: Config - yarn-site.xml
+  become: true
+  replace:
+    path: /etc/hadoop/conf/yarn-site.xml
+    regexp: "<configuration>"
+    replace: "<configuration>
+      <property>
+        <name>yarn.resourcemanager.hostname</name>
+        <value>name-1</value>
+      </property>"
