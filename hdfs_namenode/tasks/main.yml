@@ -2,7 +2,7 @@
 - name: Add nodes
   become: true
   lineinfile:
-    path: /usr/lib/hadoop/etc/hadoop/slaves
+    path: /etc/hadoop/conf/slaves
     line: "{{ item }}"
   with_items:
     - 'data-1'

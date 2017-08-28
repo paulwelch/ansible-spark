@@ -17,3 +17,19 @@
     name: hadoop*
     allow_unauthenticated: yes
     state: present
+
+- name: Config - core-site.xml
+  become: true
+  replace:
+    path: /etc/hadoop/conf/core-site.xml
+    regexp: 'localhost'
+    replace: 'name-1'
+
+- name: Config - mapred-site.xml
+  become: true
+  replace:
+    path: /etc/hadoop/conf/mapred-site.xml
+    regexp: 'localhost'
+    replace: 'name-1'
+
+#TODO: For more reliable data, need to change dfs.replication value to 2 or higher in hdfs-site.xml.
